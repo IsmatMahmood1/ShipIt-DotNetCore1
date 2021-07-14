@@ -23,7 +23,7 @@ namespace ShipIt.Controllers
         }
 
         [HttpPost("")]
-        public int Post([FromBody] OutboundOrderRequestModel request)
+        public OutboundOrderResponse Post([FromBody] OutboundOrderRequestModel request)
         {
             Log.Info(String.Format("Processing outbound order: {0}", request));
 
@@ -106,7 +106,7 @@ namespace ShipIt.Controllers
 
             var TrucksRequired = Convert.ToInt32(Math.Ceiling(weightTotal / 2000));
 
-            return TrucksRequired;
+            return new OutboundOrderResponse(TrucksRequired);
 
         }
 

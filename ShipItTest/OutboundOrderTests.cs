@@ -64,6 +64,30 @@ namespace ShipItTest
         }
 
         [Test]
+        public void TestOutboundOrderAndTruckRequired()
+        {
+            onSetUp();
+            stockRepository.AddStock(WAREHOUSE_ID, new List<StockAlteration>() { new StockAlteration(productId, 10) });
+            var outboundOrder = new OutboundOrderRequestModel()
+            {
+                WarehouseId = WAREHOUSE_ID,
+                OrderLines = new List<OrderLine>()
+                {
+                    new OrderLine()
+                    {
+                        gtin = GTIN,
+                        quantity = 9 // total weight = 900
+                    }
+                }
+            };
+
+            var response = outboundOrderController.Post(outboundOrder);
+
+            Assert.IsTrue(response.Success);
+            Assert.AreEqual(response.TruckRequired, 2);
+        }
+
+        [Test]
         public void TestOutboundOrderInsufficientStock()
         {
             onSetUp();
