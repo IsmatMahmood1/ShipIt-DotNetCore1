@@ -10,11 +10,23 @@ namespace ShipIt.Models.ApiModels
     {
         public int ProductId { get; set; }
         public int Quantity { get; set; }
+        public float Weight { get; set; }
 
         public StockAlteration(int productId, int quantity)
         {
             this.ProductId = productId;
             this.Quantity = quantity;
+
+            if (quantity < 0)
+            {
+                throw new MalformedRequestException("Alteration must be positive");
+            }
+        }
+        public StockAlteration(int productId, int quantity, float weight)
+        {
+            this.ProductId = productId;
+            this.Quantity = quantity;
+            this.Weight = weight;
 
             if (quantity < 0)
             {
