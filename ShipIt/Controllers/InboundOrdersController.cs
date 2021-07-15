@@ -42,7 +42,7 @@ namespace ShipIt.Controllers
             foreach (var stock in allStock)
             {
                 Product product = new Product(_productRepository.GetProductById(stock.ProductId));
-                if(stock.held < product.LowerThreshold && !product.Discontinued)
+                if (stock.held < product.LowerThreshold && !product.Discontinued)
                 {
                     Company company = new Company(_companyRepository.GetCompany(product.Gcp));
 
@@ -53,7 +53,7 @@ namespace ShipIt.Controllers
                         orderlinesByCompany.Add(company, new List<InboundOrderLine>());
                     }
 
-                    orderlinesByCompany[company].Add( 
+                    orderlinesByCompany[company].Add(
                         new InboundOrderLine()
                         {
                             gtin = product.Gtin,

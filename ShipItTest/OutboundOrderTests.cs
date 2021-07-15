@@ -67,7 +67,7 @@ namespace ShipItTest
         public void TestOutboundOrderAndTruckRequired()
         {
             onSetUp();
-            stockRepository.AddStock(WAREHOUSE_ID, new List<StockAlteration>() { new StockAlteration(productId, 10) });
+            stockRepository.AddStock(WAREHOUSE_ID, new List<StockAlteration>() { new StockAlteration(productId, 100000) });
             var outboundOrder = new OutboundOrderRequestModel()
             {
                 WarehouseId = WAREHOUSE_ID,
@@ -76,15 +76,15 @@ namespace ShipItTest
                     new OrderLine()
                     {
                         gtin = GTIN,
-                        quantity = 9 // total weight = 900
-                    }
+                        quantity = 90000 // total weight = 27,000,000
+                    } // 2000kg x1000g = 2,000,000g
                 }
             };
 
             var response = outboundOrderController.Post(outboundOrder);
 
             Assert.IsTrue(response.Success);
-            Assert.AreEqual(response.TruckRequired, 2);
+            Assert.AreEqual(14, response.TruckRequired);
         }
 
         [Test]

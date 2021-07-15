@@ -104,7 +104,9 @@ namespace ShipIt.Controllers
                
             }
 
-            var TrucksRequired = Convert.ToInt32(Math.Ceiling(weightTotal / 2000));
+            var TruckMaxWeight = 2000000; //weight in gram
+
+            var TrucksRequired = Convert.ToInt32(Math.Ceiling(weightTotal / TruckMaxWeight));
 
             return new OutboundOrderResponse(TrucksRequired);
 
