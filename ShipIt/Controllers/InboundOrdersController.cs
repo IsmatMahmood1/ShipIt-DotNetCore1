@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
@@ -37,14 +37,25 @@ namespace ShipIt.Controllers
             Log.Debug(String.Format("Found operations manager: {0}", operationsManager));
 
             var allStock = _stockRepository.GetStockByWarehouseId(warehouseId);
+            var allStockProdIds = allStock.Select(stock => stock.ProductId);
+
 
             Dictionary<Company, List<InboundOrderLine>> orderlinesByCompany = new Dictionary<Company, List<InboundOrderLine>>();
+
+            var products = _productRepository.GetProductsByIds(allStockProdIds).Select(x=>new Product(x));
+
+            var allCompaniesIds = products.Select(product => product.Gcp);
+
+            var companies = _companyRepository.GetCompanies(allCompaniesIds).Select(x=>new Company(x));
+
+
             foreach (var stock in allStock)
             {
-                Product product = new Product(_productRepository.GetProductById(stock.ProductId));
+                var product = products.Single(p => p.Id == stock.ProductId);
+
                 if (stock.held < product.LowerThreshold && !product.Discontinued)
                 {
-                    Company company = new Company(_companyRepository.GetCompany(product.Gcp));
+                    var company = companies.Single(c => c.Gcp == product.Gcp);
 
                     var orderQuantity = Math.Max(product.LowerThreshold * 3 - stock.held, product.MinimumOrderQuantity);
 

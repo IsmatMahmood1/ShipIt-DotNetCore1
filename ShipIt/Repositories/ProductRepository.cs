@@ -16,6 +16,7 @@ namespace ShipIt.Repositories
         ProductDataModel GetProductById(int id);
         void AddProducts(IEnumerable<ProductDataModel> products);
         void DiscontinueProductByGtin(string gtin);
+        IEnumerable<ProductDataModel> GetProductsByIds(IEnumerable<int> ids);
     }
 
     public class ProductRepository : RepositoryBase, IProductRepository
@@ -42,7 +43,14 @@ namespace ShipIt.Repositories
                 String.Join("','", gtins));
             return base.RunGetQuery(sql, reader => new ProductDataModel(reader), "No products found with given gtin ids", null);
         }
+        public IEnumerable<ProductDataModel> GetProductsByIds(IEnumerable<int> ids)
+        {
 
+            string sql = String.Format("SELECT p_id, gtin_cd, gcp_cd, gtin_nm, m_g, l_th, ds, min_qt FROM gtin WHERE p_id IN ('{0}')",
+                String.Join("','", ids));
+            string noProductWithIdErrorMessage = string.Format("No products found with id of value {0}", ids.ToString());
+            return base.RunGetQuery(sql, reader => new ProductDataModel(reader), noProductWithIdErrorMessage, null);
+        }
         public ProductDataModel GetProductById(int id)
         {
 
@@ -51,6 +59,7 @@ namespace ShipIt.Repositories
             string noProductWithIdErrorMessage = string.Format("No products found with id of value {0}", id.ToString());
             return RunSingleGetQuery(sql, reader => new ProductDataModel(reader), noProductWithIdErrorMessage, parameter);
         }
+
 
         public void DiscontinueProductByGtin(string gtin)
         {
