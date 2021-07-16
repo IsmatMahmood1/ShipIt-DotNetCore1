@@ -34,7 +34,7 @@ namespace ShipItTest
         {
             onSetUp();
             var employeeBuilder = new EmployeeBuilder().setName(NAME);
-            employeeRepository.AddEmployees(new List<Employee>() {employeeBuilder.CreateEmployee()});
+            employeeRepository.AddEmployees(new List<Employee>() {employeeBuilder.CreateEmployee(), employeeBuilder.CreateEmployee()});
             var result = employeeController.Get(NAME);
 
             var correctEmployee = employeeBuilder.CreateEmployee();
