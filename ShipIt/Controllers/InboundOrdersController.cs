@@ -36,56 +36,62 @@ namespace ShipIt.Controllers
 
             Log.Debug(String.Format("Found operations manager: {0}", operationsManager));
 
-            var allStock = _stockRepository.GetStockByWarehouseId(warehouseId);
-            var allStockProdIds = allStock.Select(stock => stock.ProductId);
+            var allStock = _stockRepository.GetStockByWarehouseId(warehouseId).ToList();
+            var allStockProdIds = allStock.Select(stock => stock.ProductId).ToList();
 
-
-            var orderlinesByCompany = new Dictionary<Company, List<InboundOrderLine>>();
             if (!allStockProdIds.Any())
             {
                 return new InboundOrderResponse
                 {
                     OperationsManager = operationsManager,
                     WarehouseId = warehouseId,
-                    OrderSegments = new List<OrderSegment>()                 
-                }; 
+                    OrderSegments = new List<OrderSegment>()
+                };
             }
-            
-            var products =  _productRepository.GetProductsByIds(allStockProdIds).Select(x => new Product(x));
-            
-            var allCompaniesIds = (products.Select(product => (product.Gcp).ToString())).ToList();
 
-            var companies = _companyRepository.GetCompanies(allCompaniesIds).Select(x=>new Company(x));
+            var products =  _productRepository.GetProductsByIds(allStockProdIds).Select(x => new Product(x)).ToList();
 
+            var allCompaniesIds = products.Select(product => product.Gcp).Distinct().ToList();
 
-            foreach (var stock in allStock)
-            {
-                var product = products.Single(p => p.Id == stock.ProductId);
+            var companies = _companyRepository.GetCompanies(allCompaniesIds).Select(x=>new Company(x)).ToList();
 
-                if (stock.held < product.LowerThreshold && !product.Discontinued)
+            var groupedStocks = allStock.Select(
+                stock =>
                 {
+                    var product = products.Single(p => p.Id == stock.ProductId);
                     var company = companies.Single(c => c.Gcp == product.Gcp);
+                    return (stock, product, company);
+                })
+                .ToList();
 
-                    var orderQuantity = Math.Max(product.LowerThreshold * 3 - stock.held, product.MinimumOrderQuantity);
+            var orderLinesByCompany = new Dictionary<Company, List<InboundOrderLine>>();
 
-                    if (!orderlinesByCompany.ContainsKey(company))
-                    {
-                        orderlinesByCompany.Add(company, new List<InboundOrderLine>());
-                    }
-
-                    orderlinesByCompany[company].Add(
-                        new InboundOrderLine
-                        {
-                            gtin = product.Gtin,
-                            name = product.Name,
-                            quantity = orderQuantity
-                        });
+            foreach (var (stock, product, company) in groupedStocks)
+            {
+                if (stock.held >= product.LowerThreshold || product.Discontinued)
+                {
+                    continue;
                 }
+
+                var orderQuantity = Math.Max(product.LowerThreshold * 3 - stock.held, product.MinimumOrderQuantity);
+
+                if (!orderLinesByCompany.ContainsKey(company))
+                {
+                    orderLinesByCompany.Add(company, new List<InboundOrderLine>());
+                }
+
+                orderLinesByCompany[company].Add(
+                    new InboundOrderLine
+                    {
+                        gtin = product.Gtin,
+                        name = product.Name,
+                        quantity = orderQuantity
+                    });
             }
 
-            Log.Debug(String.Format("Constructed order lines: {0}", orderlinesByCompany));
+            Log.Debug(String.Format("Constructed order lines: {0}", orderLinesByCompany));
 
-            var orderSegments = orderlinesByCompany.Select(ol => new OrderSegment
+            var orderSegments = orderLinesByCompany.Select(ol => new OrderSegment
             {
                 OrderLines = ol.Value,
                 Company = ol.Key
