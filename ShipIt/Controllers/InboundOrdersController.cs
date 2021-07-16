@@ -40,11 +40,20 @@ namespace ShipIt.Controllers
             var allStockProdIds = allStock.Select(stock => stock.ProductId);
 
 
-            Dictionary<Company, List<InboundOrderLine>> orderlinesByCompany = new Dictionary<Company, List<InboundOrderLine>>();
-
-            var products = _productRepository.GetProductsByIds(allStockProdIds).Select(x=>new Product(x));
-
-            var allCompaniesIds = products.Select(product => product.Gcp);
+            var orderlinesByCompany = new Dictionary<Company, List<InboundOrderLine>>();
+            if (!allStockProdIds.Any())
+            {
+                return new InboundOrderResponse
+                {
+                    OperationsManager = operationsManager,
+                    WarehouseId = warehouseId,
+                    OrderSegments = new List<OrderSegment>()                 
+                }; 
+            }
+            
+            var products =  _productRepository.GetProductsByIds(allStockProdIds).Select(x => new Product(x));
+            
+            var allCompaniesIds = (products.Select(product => (product.Gcp).ToString())).ToList();
 
             var companies = _companyRepository.GetCompanies(allCompaniesIds).Select(x=>new Company(x));
 
@@ -65,7 +74,7 @@ namespace ShipIt.Controllers
                     }
 
                     orderlinesByCompany[company].Add(
-                        new InboundOrderLine()
+                        new InboundOrderLine
                         {
                             gtin = product.Gtin,
                             name = product.Name,
@@ -76,7 +85,7 @@ namespace ShipIt.Controllers
 
             Log.Debug(String.Format("Constructed order lines: {0}", orderlinesByCompany));
 
-            var orderSegments = orderlinesByCompany.Select(ol => new OrderSegment()
+            var orderSegments = orderlinesByCompany.Select(ol => new OrderSegment
             {
                 OrderLines = ol.Value,
                 Company = ol.Key
@@ -84,7 +93,7 @@ namespace ShipIt.Controllers
 
             Log.Info("Constructed inbound order");
 
-            return new InboundOrderResponse()
+            return new InboundOrderResponse
             {
                 OperationsManager = operationsManager,
                 WarehouseId = warehouseId,

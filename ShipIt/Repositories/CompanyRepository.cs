@@ -14,7 +14,7 @@ namespace ShipIt.Repositories
         int GetCount();
         CompanyDataModel GetCompany(string gcp);
         void AddCompanies(IEnumerable<Company> companies);
-        IEnumerable<CompanyDataModel> GetCompanies(IEnumerable<string> gcps);
+        IEnumerable<CompanyDataModel> GetCompanies(List<string> gcps);
     }
 
     public class CompanyRepository : RepositoryBase, ICompanyRepository
@@ -35,13 +35,12 @@ namespace ShipIt.Repositories
             string noProductWithIdErrorMessage = string.Format("No companies found with gcp: {0}", gcp);
             return base.RunSingleGetQuery(sql, reader => new CompanyDataModel(reader), noProductWithIdErrorMessage, parameter);
         }
-        public IEnumerable<CompanyDataModel> GetCompanies(IEnumerable<string> gcps)
+        public IEnumerable<CompanyDataModel> GetCompanies(List<string> gcps)
         {
             var sql = String.Format(
                 "SELECT gcp_cd, gln_nm, gln_addr_02, gln_addr_03, gln_addr_04, gln_addr_postalcode, gln_addr_city, contact_tel, contact_mail FROM gcp WHERE gcp_cd IN ('{0}')", String.Join("','", gcps));
-            var parameter = new NpgsqlParameter("@gcp_cd", gcps);
             var noProductWithIdErrorMessage = string.Format("No companies found with gcp: {0}", gcps);
-            return base.RunGetQuery(sql, reader => new CompanyDataModel(reader), noProductWithIdErrorMessage, parameter);
+            return base.RunGetQuery(sql, reader => new CompanyDataModel(reader), noProductWithIdErrorMessage, null);
         }
 
         public void AddCompanies(IEnumerable<Company> companies)
