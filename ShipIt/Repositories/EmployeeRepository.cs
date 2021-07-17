@@ -14,11 +14,12 @@ namespace ShipIt.Repositories
     {
         int GetCount();
         int GetWarehouseCount();
-        EmployeeDataModel GetEmployeeByName(string name);
+        IEnumerable<EmployeeDataModel> GetEmployeeByName(string name);
         IEnumerable<EmployeeDataModel> GetEmployeesByWarehouseId(int warehouseId);
         EmployeeDataModel GetOperationsManager(int warehouseId);
         void AddEmployees(IEnumerable<Employee> employees);
         void RemoveEmployee(string name);
+        bool IsDuplicateRecord(Employee employee);
     }
 
     public class EmployeeRepository : RepositoryBase, IEmployeeRepository
@@ -73,12 +74,12 @@ namespace ShipIt.Repositories
             };
         }
 
-        public EmployeeDataModel GetEmployeeByName(string name)
+        public IEnumerable<EmployeeDataModel> GetEmployeeByName(string name)
         {
             string sql = "SELECT name, w_id, role, ext FROM em WHERE name = @name";
             var parameter = new NpgsqlParameter("@name", name);
             string noProductWithIdErrorMessage = string.Format("No employees found with name: {0}", name);
-            return base.RunSingleGetQuery(sql, reader => new EmployeeDataModel(reader),noProductWithIdErrorMessage, parameter);
+            return base.RunGetQuery(sql, reader => new EmployeeDataModel(reader),noProductWithIdErrorMessage, parameter);
         }
 
         public IEnumerable<EmployeeDataModel> GetEmployeesByWarehouseId(int warehouseId)
@@ -109,12 +110,11 @@ namespace ShipIt.Repositories
         public void AddEmployees(IEnumerable<Employee> employees)
         {
             string sql = "INSERT INTO em (name, w_id, role, ext) VALUES(@name, @w_id, @role, @ext)";
-            
             var parametersList = new List<NpgsqlParameter[]>();
             foreach (var employee in employees)
             {
                 var employeeDataModel = new EmployeeDataModel(employee);
-                parametersList.Add(employeeDataModel.GetNpgsqlParameters().ToArray());
+                    parametersList.Add(employeeDataModel.GetNpgsqlParameters().ToArray());
             }
 
             base.RunTransaction(sql, parametersList);
@@ -134,5 +134,17 @@ namespace ShipIt.Repositories
                 throw new InvalidStateException("Unexpectedly deleted " + rowsDeleted + " rows, but expected a single update");
             }
         }
+
+        public bool IsDuplicateRecord(Employee employee)
+        {
+            string checkedsql = "SELECT name, w_id, role, ext FROM em WHERE w_id = @w_id AND role = @role AND name = @name AND ext = @ext";
+
+            if (checkedsql.Any())
+            {
+                return true;
+            }
+            return false;    
+        }
+    
     }
 }

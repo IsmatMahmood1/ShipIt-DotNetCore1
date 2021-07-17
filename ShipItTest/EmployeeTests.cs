@@ -24,9 +24,9 @@ namespace ShipItTest
             onSetUp();
             var employee = new EmployeeBuilder().CreateEmployee();
             employeeRepository.AddEmployees(new List<Employee>() {employee});
-            Assert.AreEqual(employeeRepository.GetEmployeeByName(employee.Name).Name, employee.Name);
-            Assert.AreEqual(employeeRepository.GetEmployeeByName(employee.Name).Ext, employee.ext);
-            Assert.AreEqual(employeeRepository.GetEmployeeByName(employee.Name).WarehouseId, employee.WarehouseId);
+            Assert.AreEqual(employeeRepository.GetEmployeeByName(employee.Name).First().Name, employee.Name);
+            Assert.AreEqual(employeeRepository.GetEmployeeByName(employee.Name).First().Ext, employee.ext);
+            Assert.AreEqual(employeeRepository.GetEmployeeByName(employee.Name).First().WarehouseId, employee.WarehouseId);
         }
 
         [Test]
@@ -97,7 +97,7 @@ namespace ShipItTest
             var addEmployeesRequest = employeeBuilder.CreateAddEmployeesRequest();
 
             var response = employeeController.Post(addEmployeesRequest);
-            var databaseEmployee = employeeRepository.GetEmployeeByName(NAME);
+            var databaseEmployee = employeeRepository.GetEmployeeByName(NAME).First();
             var correctDatabaseEmploye = employeeBuilder.CreateEmployee();
 
             Assert.IsTrue(response.Success);
@@ -143,12 +143,17 @@ namespace ShipItTest
         }
 
         [Test]
-        public void TestAddDuplicateEmployee()
+        public void TestPreventAddingDuplicateEmployeeRecord()
         {
             onSetUp();
-            var employeeBuilder = new EmployeeBuilder().setName(NAME);
-            employeeRepository.AddEmployees(new List<Employee>() { employeeBuilder.CreateEmployee() });
-            var addEmployeesRequest = employeeBuilder.CreateAddEmployeesRequest();
+            var employeeBuilder = new EmployeeBuilder();
+            var employee = new EmployeeBuilder().CreateEmployee();
+            var addEmployeesRequest = new AddEmployeesRequest();
+            if (!employeeRepository.IsDuplicateRecord(employee))
+            {
+                employeeRepository.AddEmployees(new List<Employee>() { employeeBuilder.CreateEmployee() });
+                addEmployeesRequest = employeeBuilder.CreateAddEmployeesRequest();
+            }
 
             try
             {
